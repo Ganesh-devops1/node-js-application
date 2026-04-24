@@ -1,14 +1,47 @@
 const http = require('http');
+const os = require('os');
 
-const hostname = '0.0.0.0';
-const port = 3000;
+// Config
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
+// Helper function
+const sendResponse = (res, statusCode, data, contentType = 'application/json') => {
+  res.writeHead(statusCode, { 'Content-Type': contentType });
+  res.end(contentType === 'application/json' ? JSON.stringify(data) : data);
+};
+
+// Server
 const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('CI/CD Pipeline Working Successfully using GitHub Action🚀\n');
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+
+  if (req.url === '/') {
+    sendResponse(res, 200, {
+      message: 'CI/CD Pipeline Working Successfully 🚀',
+      status: 'success'
+    });
+
+  } else if (req.url === '/health') {
+    sendResponse(res, 200, {
+      status: 'UP',
+      uptime: process.uptime(),
+      timestamp: new Date()
+    });
+
+  } else if (req.url === '/info') {
+    sendResponse(res, 200, {
+      hostname: os.hostname(),
+      platform: os.platform(),
+      cpu: os.cpus().length,
+      memory: `${Math.round(os.totalmem() / (1024 * 1024))} MB`
+    });
+
+  } else {
+    sendResponse(res, 404, { error: 'Route not found' });
+  }
 });
 
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
+// Start server
+server.listen(PORT, HOST, () => {
+  console.log(`Server running at http://${HOST}:${PORT}`);
 });
